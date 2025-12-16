@@ -10,10 +10,10 @@ Aplikasi pemesanan kendaraan tambang nikel dengan approval berjenjang (minimal 2
 - PHP version (referensi integrasi legacy): 8.2
 
 ### Akun Demo
-- Admin: `admin-01` (Aulia) — bebas pilih via dropdown di header
-- Approver L1: `apr-01` (Pak Bima) atau `apr-03` (Region Sulawesi)
-- Approver L2: `apr-02` (Bu Chandra)
-Password tidak diproteksi di demo (pilih user dari dropdown). Untuk produksi tambahkan auth sendiri.
+- Admin: username: `admin-01` / password: `admin123`
+- Approver L1:  username: `apr-01` / password: `apr01` atau `apr-03` / `apr03`
+- Approver L2: username: `apr-02` / password: `apr02`
+Login wajib sebelum mengakses aplikasi. Setelah login, role & region tampil di header.
 
 ### Menjalankan Aplikasi
 ```bash

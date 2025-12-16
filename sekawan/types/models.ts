@@ -6,6 +6,7 @@ export type User = {
   role: Role;
   level?: number;
   region: string;
+  password?: string;
 };
 
 export type Approval = {

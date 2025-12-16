@@ -1,13 +1,20 @@
 import type { User, Vehicle, Booking } from "@/types/models";
 
 export const users: User[] = [
-  { id: "admin-01", name: "Aulia (Admin)", role: "admin", region: "HQ" },
+  {
+    id: "admin-01",
+    name: "Aulia (Admin)",
+    role: "admin",
+    region: "HQ",
+    password: "admin123",
+  },
   {
     id: "apr-01",
     name: "Pak Bima (Level 1)",
     role: "approver",
     level: 1,
     region: "HQ",
+    password: "apr01",
   },
   {
     id: "apr-02",
@@ -15,6 +22,7 @@ export const users: User[] = [
     role: "approver",
     level: 2,
     region: "HQ",
+    password: "apr02",
   },
   {
     id: "apr-03",
@@ -22,6 +30,7 @@ export const users: User[] = [
     role: "approver",
     level: 1,
     region: "Sulawesi",
+    password: "apr03",
   },
 ];
 
