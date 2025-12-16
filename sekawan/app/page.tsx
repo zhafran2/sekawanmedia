@@ -10,7 +10,7 @@ import { users, vehicles, initialBookings, usageByMonth } from "@/data/mockData"
 const todayIso = new Date().toISOString().slice(0, 10);
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<User>(users[0]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [logs, setLogs] = useState<LogEntry[]>([
     {
@@ -36,6 +36,8 @@ export default function Home() {
     approverL1: "apr-01",
     approverL2: "apr-02",
   });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const vehicleById = useMemo(
     () => Object.fromEntries(vehicles.map((v) => [v.id, v])),
@@ -81,6 +83,7 @@ export default function Home() {
     `BK-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
 
   const createBooking = () => {
+    if (!currentUser) return;
     const vehicle = vehicleById[form.vehicleId];
     if (!vehicle) return;
     const id = nextId(bookings.length);
@@ -125,7 +128,8 @@ export default function Home() {
   };
 
   const approverCanAct = (booking: Booking) => {
-    if (currentUser.role !== "approver" || !currentUser.level) return false;
+    if (!currentUser || currentUser.role !== "approver" || !currentUser.level)
+      return false;
     const currentLevel = booking.approvers.find(
       (a) => a.level === currentUser.level,
     );
@@ -140,6 +144,7 @@ export default function Home() {
     bookingId: string,
     decision: "approved" | "rejected",
   ) => {
+    if (!currentUser) return;
     setBookings((prev) => {
       // Buat array baru untuk memastikan React mendeteksi perubahan
       const updated = prev.map((b) => {
@@ -229,6 +234,96 @@ export default function Home() {
     link.click();
   };
 
+  const handleLogin = () => {
+    const found = users.find(
+      (u) =>
+        u.id === loginForm.username.trim() &&
+        u.password === loginForm.password.trim(),
+    );
+    if (!found) {
+      setLoginError("Username atau password salah");
+      return;
+    }
+    setCurrentUser(found);
+    setLoginError(null);
+    setLogs((prev) => [
+      {
+        id: crypto.randomUUID(),
+        actor: found.name,
+        action: "Login aplikasi",
+        at: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">
+              Fleet Monitoring & Booking
+            </p>
+            <h1 className="text-xl font-bold text-slate-900">Login</h1>
+            <p className="text-sm text-slate-600">
+              Masuk dengan username (ID) dan password. Role: admin atau approver
+              level 1/2.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Username (ID)
+              </label>
+              <input
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                value={loginForm.username}
+                onChange={(e) =>
+                  setLoginForm((f) => ({ ...f, username: e.target.value }))
+                }
+                placeholder="mis. admin-01 / apr-01"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <input
+                type="password"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                value={loginForm.password}
+                onChange={(e) =>
+                  setLoginForm((f) => ({ ...f, password: e.target.value }))
+                }
+                placeholder="admin123 / apr01 / apr02 / apr03"
+              />
+            </div>
+            {loginError && (
+              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">
+                {loginError}
+              </div>
+            )}
+            <button
+              className="w-full cursor-pointer rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+              onClick={handleLogin}
+            >
+              Masuk
+            </button>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+            Demo akun: admin-01 / admin123, apr-01 / apr01, apr-02 / apr02,
+            apr-03 / apr03
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-8 p-6">
@@ -239,7 +334,7 @@ export default function Home() {
             </p>
             <h1 className="text-2xl font-bold text-slate-900">
               Pemesanan Kendaraan Tambang Nikel
-            </h1>
+          </h1>
             <p className="text-sm text-slate-600">
               Persetujuan berjenjang, log audit, export Excel, dashboard
               pemakaian.
@@ -247,23 +342,21 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-2 md:items-end">
             <label className="text-xs font-semibold text-slate-500">
-              Aktif sebagai
+              Logged in sebagai
             </label>
-            <select
-              className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-900"
-              value={currentUser.id}
-              onChange={(e) => {
-                const found = users.find((u) => u.id === e.target.value);
-                if (found) setCurrentUser(found);
-              }}
-            >
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} — {u.role}
-                  {u.level ? ` L${u.level}` : ""} ({u.region})
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-900">
+                {currentUser.name} — {currentUser.role}
+                {currentUser.level ? ` L${currentUser.level}` : ""} (
+                {currentUser.region})
+              </span>
+              <button
+                className="cursor-pointer rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                onClick={handleLogout}
+              >
+                Keluar
+              </button>
+            </div>
           </div>
         </header>
 
@@ -433,9 +526,9 @@ export default function Home() {
               <button
                 className="cursor-pointer rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={createBooking}
-                disabled={currentUser.role !== "admin"}
+                disabled={!currentUser || currentUser.role !== "admin"}
               >
-                {currentUser.role === "admin"
+                {currentUser?.role === "admin"
                   ? "Simpan Pemesanan"
                   : "Login sebagai admin untuk input"}
               </button>
@@ -489,8 +582,8 @@ Jika semua approve -> status approved`}
               <p className="text-sm text-slate-600">
                 Persetujuan berjenjang minimal 2 level. Approver hanya bisa
                 bertindak saat level sebelumnya selesai.
-              </p>
-            </div>
+          </p>
+        </div>
             <div className="flex flex-wrap gap-3 text-sm">
               <input
                 type="date"
@@ -655,7 +748,7 @@ Jika semua approve -> status approved`}
             </div>
           </div>
         </section>
-      </div>
+        </div>
     </div>
   );
 }
